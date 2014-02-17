@@ -1,0 +1,63 @@
+/* ConvertVRML.mel - Steven Dao - 8 February 2014.
+ * This script converts a polygon mesh in Maya to the VRML-style representation used in
+ * C S 354 project 1.
+ * Note, for a complex object, the bottleneck of printing to the Maya console means that
+ * this script may take a few seconds to run.
+ * This script will use the world-space (not object-space) coordinates of your object.
+ * Thus, you will have to scale them to the appropriate size first.
+ */
+
+PolySelectConvert 3; // Change selection to vertices.
+string $verts[] = `ls -selection -flatten`;
+float $allVerts[];
+clear $allVerts; // Clear anything leftover from last time, otherwise we keep appending.
+int $i;
+for ($i = 0; $i < `size $verts`; $i++) {
+    $val = $verts[$i];
+    vector $coords = `xform -q -ws -t $val`;
+    $allVerts[`size $allVerts`] = $coords.x;
+    $allVerts[`size $allVerts`] = $coords.y;
+    $allVerts[`size $allVerts`] = $coords.z;
+}
+
+PolySelectConvert 1; // Change selection to faces.
+string $faces[] = `ls -selection -flatten`;
+string $allFaceIndices[];
+clear $allFaceIndices;
+int $j;
+for ($j = 0; $j < `size $faces`; $j++) {
+    $val = $faces[$j];
+    string $faceInfo[] = `polyInfo -faceToVertex $val`;
+    string $tokens[];
+    tokenize $faceInfo[0] " :\n\r" $tokens;
+    int $t;
+    for ($t = 2; $t < `size $tokens`; $t++) {
+        $allFaceIndices[`size $allFaceIndices`] = $tokens[$t];
+    }
+    $allFaceIndices[`size $allFaceIndices`] = -1;
+}
+
+print "/* Automatically generated VRML data. */\n";
+
+print "GLfloat vertices[] = {";
+int $k;
+for ($k = 0; $k < `size $allVerts`; $k++) {
+    if ($k % 3 == 0) {
+        print "\n\t";
+    }
+    print $allVerts[$k];
+    print ", ";
+}
+print "\n};\n";
+
+print "GLint indices[] = {";
+int $prevIndex = -1;
+for ($k = 0; $k < `size $allFaceIndices`; $k++) {
+    if ($prevIndex == -1) {
+        print "\n\t";
+    }
+    $prevIndex = $allFaceIndices[$k];
+    print $prevIndex;
+    print ", ";
+}
+print "\n};\n";

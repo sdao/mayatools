@@ -70,7 +70,7 @@ global proc autoLoopNCache(string $cacheName, string $cacheFolder, int $loopStar
                     setAttr $cacheBlendAttr1 0.0;
 
                     setKeyframe { $cacheBlendKeyProp0, $cacheBlendKeyProp1 };
-                    
+
                     currentTime ($loopStart + $loopFrames - 1);
                     setAttr $cacheBlendAttr0 0.0;
                     setAttr $cacheBlendAttr1 1.0;
@@ -106,8 +106,8 @@ global proc runCache() {
 
     if ($startFrame >= $endFrame) {
         confirmDialog -message "The start frame must come before the end frame." -button "OK";
-    } else if ($overlap >= ($endFrame - $startFrame + 1)) {
-        confirmDialog -message "The overlap must be less than the whole loop region." -button "OK";
+    } else if (2 * $overlap >= ($endFrame - $startFrame + 1)) {
+        confirmDialog -message "The overlap must be less than half the whole loop region." -button "OK";
     } else if (`size $cacheDir` == 0) {
         confirmDialog -message "Please choose a cache directory." -button "OK";
     } else if (`size $cacheName` == 0) {

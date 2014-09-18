@@ -14,7 +14,7 @@ global proc autoLoopNCache(string $cacheName, string $cacheFolder, int $loopStar
         confirmDialog -message "Please choose some nCloth objects to cache." -button "OK";
         return;
     }
-    
+
     string $selectedObjs[] = `ls -selection`;
     for ($obj in $selectedObjs) {
         string $query = "*" + $cacheName + "*" + $obj + "*";
@@ -22,15 +22,15 @@ global proc autoLoopNCache(string $cacheName, string $cacheFolder, int $loopStar
         if (`size $cacheNodes` > 0) {
             // We successfully cached this... whooooo!
             string $cacheNode = $cacheNodes[0];
-            
+
             select $obj;
             string $cacheNameAttr = $cacheNode + ".cacheName";
             string $cacheXml = $cacheFolder + "/" + `getAttr $cacheNameAttr` + ".xml";
             print $cacheXml;
-            
+
     		string $geo[];
     		$geo[0] = $obj;
-            doImportCacheFile $cacheXml "xml" $geo {}; 
+            doImportCacheFile $cacheXml "xml" $geo {};
         }
         else {
             print "BOOOO.\n";
@@ -50,32 +50,31 @@ global proc autoLoopNCache(string $cacheName, string $cacheFolder, int $loopStar
             int $ofs = $loopStart - ($loopEnd - $loopStart - $loopFrames) - 1;
             setAttr $startFrame0 $ofs;
             setAttr $startFrame1 $loopStart;
-            
+
             string $allCacheBlends[] = `ls -type cacheBlend`;
             for ($cb in $allCacheBlends) {
                 string $cacheBlendAttr0 = $cb + "." + $newCacheNodes[0];
                 string $cacheBlendAttr1 = $cb + "." + $newCacheNodes[1];
                 string $cacheBlendKeyProp0 = $cb + ".cd[0].w";
                 string $cacheBlendKeyProp1 = $cb + ".cd[1].w";
-                
+
                 if (!(catchQuiet(`listAttr $cacheBlendAttr0`)) && !(catchQuiet(`listAttr $cacheBlendAttr1`))) {
                     currentTime 1;
                     setAttr $cacheBlendAttr0 1.0;
                     setAttr $cacheBlendAttr1 0.0;
-                    
+
                     setKeyframe { $cacheBlendKeyProp0, $cacheBlendKeyProp1 };
-                    
+
                     currentTime $loopStart;
                     setAttr $cacheBlendAttr0 1.0;
                     setAttr $cacheBlendAttr1 0.0;
-                    
+
                     setKeyframe { $cacheBlendKeyProp0, $cacheBlendKeyProp1 };
-                    
                     
                     currentTime ($loopStart + $loopFrames - 1);
                     setAttr $cacheBlendAttr0 0.0;
                     setAttr $cacheBlendAttr1 1.0;
-                    
+
                     setKeyframe { $cacheBlendKeyProp0, $cacheBlendKeyProp1 };
                 }
             }
@@ -84,7 +83,7 @@ global proc autoLoopNCache(string $cacheName, string $cacheFolder, int $loopStar
             print "BOOOO.\n";
         }
     }
-    
+
     int $trueLoopEnd = $loopEnd - $loopFrames;
     playbackOptions -ast $loopStart -aet $trueLoopEnd;
 }
@@ -104,7 +103,7 @@ global proc runCache() {
     int $overlap = `intFieldGrp -q -value1 overlapField`;
     string $cacheDir = `textFieldButtonGrp -q -text dirField`;
     string $cacheName = `textFieldGrp -q -text nameField`;
-    
+
     if ($startFrame >= $endFrame) {
         confirmDialog -message "The start frame must come before the end frame." -button "OK";
     } else if ($overlap >= ($endFrame - $startFrame + 1)) {

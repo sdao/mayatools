@@ -1,18 +1,24 @@
-window -title "Create Looped Cache" loopedDialogWnd;
-    columnLayout -adjustableColumn true;
-        textFieldButtonGrp -label "Cache directory:" -text "" -buttonLabel "Browse..." -buttonCommand selectDir dirField;
-        textFieldGrp -label "Cache name:" -text "cache" nameField;
-        intFieldGrp -label "Starting frame:" -value1 30 startFrameField;
-        intFieldGrp -label "Ending frame:" -value1 130 endFrameField;
-        intFieldGrp -label "Blend overlap:" -value1 10 overlapField;
-    rowLayout -numberOfColumns 2 -adjustableColumn 1;
-        button -label "Create" -command runCache;
-        button -label "Cancel" -command "deleteUI -window loopedDialogWnd";
+if (!(`window -exists loopedDialogWnd`)) {
+    window -title "Create Looped Cache" loopedDialogWnd;
+        columnLayout -adjustableColumn true;
+            textFieldButtonGrp -label "Cache directory:" -text "" -buttonLabel "Browse..." -buttonCommand selectDir dirField;
+            textFieldGrp -label "Cache name:" -text "cache" nameField;
+            intFieldGrp -label "Starting frame:" -value1 30 startFrameField;
+            intFieldGrp -label "Ending frame:" -value1 130 endFrameField;
+            intFieldGrp -label "Blend overlap:" -value1 10 overlapField;
+        rowLayout -numberOfColumns 2 -adjustableColumn 1;
+            button -label "Create" -command runCache;
+            button -label "Cancel" -command "deleteUI -window loopedDialogWnd";
+}
 
-global proc autoLoopNCache(string $cacheName, string $cacheFolder, int $loopStart, int $loopEnd, int $loopFrames) {
+global proc errorDialog(string $message) {
+    confirmDialog -title $message -icon warning -button "OK";
+}
+
+global proc int autoLoopNCache(string $cacheName, string $cacheFolder, int $loopStart, int $loopEnd, int $loopFrames) {
     if (catchQuiet(`doCreateNclothCache 5 { "2", "1", "10", "OneFile", "1", $cacheFolder, "1", $cacheName,"1", "add", "0", "1", "1","0","1","mcx" }`)) {
-        confirmDialog -message "Please choose some nCloth objects to cache." -button "OK";
-        return;
+        errorDialog "Please choose some nCloth objects to cache.";
+        return false;
     }
 
     string $selectedObjs[] = `ls -selection`;
@@ -26,11 +32,11 @@ global proc autoLoopNCache(string $cacheName, string $cacheFolder, int $loopStar
             select $obj;
             string $cacheNameAttr = $cacheNode + ".cacheName";
             string $cacheXml = $cacheFolder + "/" + `getAttr $cacheNameAttr` + ".xml";
-            print $cacheXml;
+            // print $cacheXml;
 
     		string $geo[];
     		$geo[0] = $obj;
-            doImportCacheFile $cacheXml "xml" $geo {};
+            doImportCacheFile `toNativePath $cacheXml` "xml" $geo {};
         }
         else {
             print "BOOOO.\n";
@@ -85,7 +91,9 @@ global proc autoLoopNCache(string $cacheName, string $cacheFolder, int $loopStar
     }
 
     int $trueLoopEnd = $loopEnd - $loopFrames;
-    playbackOptions -ast $loopStart -aet $trueLoopEnd;
+    playbackOptions -min $loopStart -max $trueLoopEnd;
+    
+    return true;
 }
 
 global proc selectDir() {
@@ -105,17 +113,20 @@ global proc runCache() {
     string $cacheName = `textFieldGrp -q -text nameField`;
 
     if ($startFrame >= $endFrame) {
-        confirmDialog -message "The start frame must come before the end frame." -button "OK";
+        errorDialog "The start frame must come before the end frame.";
     } else if (2 * $overlap >= ($endFrame - $startFrame + 1)) {
-        confirmDialog -message "The overlap must be less than half the whole loop region." -button "OK";
+        errorDialog "The overlap must be less than half the whole loop range.";
     } else if (`size $cacheDir` == 0) {
-        confirmDialog -message "Please choose a cache directory." -button "OK";
+        errorDialog "Please choose a cache directory.";
     } else if (`size $cacheName` == 0) {
-        confirmDialog -message "Please specify the cache name." -button "OK";
+        errorDialog "Please specify the cache name.";
+    } else if ($startFrame < `playbackOptions -q -min` || $endFrame > `playbackOptions -q -max`) {
+        errorDialog "The loop range falls outside the playback min and max range.\nPlease set the playback range to the frame range you want to cache.";
     } else {
-        autoLoopNCache($cacheName, $cacheDir, $startFrame, $endFrame, $overlap);
-        deleteUI -window loopedDialogWnd;
+        if (`autoLoopNCache $cacheName $cacheDir $startFrame $endFrame $overlap`) {
+            deleteUI -window loopedDialogWnd;
+        }
     }
 }
 
-showWindow "loopedDialogWnd";
+showWindow loopedDialogWnd;

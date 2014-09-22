@@ -36,7 +36,7 @@ global proc int autoLoopNCache(string $cacheName, string $cacheFolder, int $loop
 
     		string $geo[];
     		$geo[0] = $obj;
-            doImportCacheFile `toNativePath $cacheXml` "xml" $geo {};
+            doImportCacheFile $cacheXml "xml" $geo {};
         }
         else {
             print "BOOOO.\n";
@@ -92,7 +92,7 @@ global proc int autoLoopNCache(string $cacheName, string $cacheFolder, int $loop
 
     int $trueLoopEnd = $loopEnd - $loopFrames;
     playbackOptions -min $loopStart -max $trueLoopEnd;
-    
+
     return true;
 }
 

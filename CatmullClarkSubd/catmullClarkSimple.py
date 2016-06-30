@@ -8,8 +8,12 @@ if not itSelection.isDone():
     dp = itSelection.getDagPath()
     dagPaths.append(dp)
 
-mesh = dagPaths[0].node()
-meshFn = om.MFnMesh(dagPaths[0])
+dp = dagPaths[0]
+mesh = dp.node()
+meshFn = om.MFnMesh(dp)
+
+# Delete construction history (needed for primitives, but not necessary in general)
+maya.cmds.delete(dp.fullPathName(), constructionHistory = True)
 
 # Compute new face vertices
 faceIter = om.MItMeshPolygon(mesh)
@@ -129,5 +133,4 @@ while not faceIter.isDone():
         polyConnects += [vtx, epa, nfp, epb]
     faceIter.next(None)
 
-newMesh = om.MFnMesh()
-newMesh.create(newPoints, polyCounts, polyConnects)
+meshFn.createInPlace(newPoints, polyCounts, polyConnects)

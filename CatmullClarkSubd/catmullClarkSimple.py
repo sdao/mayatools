@@ -12,9 +12,6 @@ dp = dagPaths[0]
 mesh = dp.node()
 meshFn = om.MFnMesh(dp)
 
-# Delete construction history (needed for primitives, but not necessary in general)
-maya.cmds.delete(dp.fullPathName(), constructionHistory = True)
-
 # Compute new face vertices
 faceIter = om.MItMeshPolygon(mesh)
 newFacePoints = [None] * faceIter.count()
@@ -40,16 +37,7 @@ newEdgePoints = [None] * edgeIter.count()
 
 while not edgeIter.isDone():
     edgeFaces = edgeIter.getConnectedFaces()
-    if len(edgeFaces) == 1:
-        fp1 = newFacePoints[edgeFaces[0]]
-        ep1 = edgeIter.point(0)
-        ep2 = edgeIter.point(1)
-        x = fp1.x + ep1.x + ep2.x
-        y = fp1.y + ep1.y + ep2.y
-        z = fp1.z + ep1.z + ep2.z
-        w = fp1.w + ep1.w + ep2.w
-        newEdgePoints[edgeIter.index()] = om.MPoint(x / 3.0, y / 3.0, z / 3.0, w / 3.0)
-    else:
+    if len(edgeFaces) == 2:
         fp1 = newFacePoints[edgeFaces[0]]
         fp2 = newFacePoints[edgeFaces[1]]
         ep1 = edgeIter.point(0)
@@ -59,6 +47,14 @@ while not edgeIter.isDone():
         z = fp1.z + fp2.z + ep1.z + ep2.z
         w = fp1.w + fp2.w + ep1.w + ep2.w
         newEdgePoints[edgeIter.index()] = om.MPoint(0.25 * x, 0.25 * y, 0.25 * z, 0.25 * w)
+    else:
+        ep1 = edgeIter.point(0)
+        ep2 = edgeIter.point(1)
+        x = ep1.x + ep2.x
+        y = ep1.y + ep2.y
+        z = ep1.z + ep2.z
+        w = ep1.w + ep2.w
+        newEdgePoints[edgeIter.index()] = om.MPoint(0.5 * x, 0.5 * y, 0.5 * z, 0.5 * w)
     edgeIter.next()
 
 # Compute updated original points
@@ -72,6 +68,11 @@ while not vtxIter.isDone():
     vtxEdgeVtxes = vtxIter.getConnectedVertices()
 
     n = len(vtxFaces)
+    if n < 3:
+        updatedPoints[vtxIter.index()] = vtx
+        vtxIter.next()
+        continue
+
     sf = 1.0 / n
     fpx = 0
     fpy = 0
